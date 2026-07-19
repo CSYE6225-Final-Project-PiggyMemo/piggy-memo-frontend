@@ -7,10 +7,10 @@ import * as regCheck from "@/lib/RegistraCheck"
 
 export default function Home() {
   //Hooks for the page
-  const {username, setUsername} = useState("");
-  const {password, setPassword} = useState("");
-  const {showPwd, setShowPwd} = useState(false);
-  const {result, setResult} = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [result, setResult] = useState("");
 
   //According to message type, change the rendering color
   const infoColor = {
