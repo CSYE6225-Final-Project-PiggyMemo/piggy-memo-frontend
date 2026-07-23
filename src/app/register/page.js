@@ -125,7 +125,7 @@ export default function Home() {
 
         <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
           Already have an account?{" "}
-          <a href="#" className="font-medium text-black underline underline-offset-2 dark:text-white">
+          <a href="/login" className="font-medium text-black underline underline-offset-2 dark:text-white">
             Log in
           </a>
         </p>
