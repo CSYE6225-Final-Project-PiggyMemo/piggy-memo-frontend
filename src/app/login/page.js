@@ -10,6 +10,9 @@ export default function Home() {
     const [password, setPassword] = useState("");
     const [showPwd, setShowPwd] = useState(false);
 
+    const [nameInfo, validateName] = useUsernameCheck();
+    const [pwdInfo, validatePwd] = usePasswordCheck();
+
     const submit = async() => {
         try {
             await login({username, password});
