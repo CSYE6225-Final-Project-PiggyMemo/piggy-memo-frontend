@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { checkUsername } from "@/api/user";
-import { registraInfoType, Info } from "@/lib/RegistraCheck"
+import { InfoType, Info } from "@/lib/Info";
 
 /**
  * Username check function for frontend filtering. Username must obey following rules:
@@ -12,40 +12,40 @@ import { registraInfoType, Info } from "@/lib/RegistraCheck"
  * @returns validateName: Function to help check the availability of username
  */
 export function useUsernameCheck() {
-    const [nameInfo, setInfo] = useState<Info>({ message: "", type: registraInfoType.EMPTY });
+    const [nameInfo, setInfo] = useState<Info>({ message: "", type: InfoType.EMPTY });
 
     const USERNAME_REGEX = /^[A-Za-z0-9_]+$/
 
     const validateName = async (username: string) => {
         if (!username.trim()) {
-            setInfo({ message: "Username cannot be empty!", type: registraInfoType.WARNING });
+            setInfo({ message: "Username cannot be empty!", type: InfoType.WARNING });
             return;
         }
 
         if (!USERNAME_REGEX.test(username)) {
-            setInfo({ message: "Username must only contains letters, numbers or underline!", type: registraInfoType.WARNING });
+            setInfo({ message: "Username must only contains letters, numbers or underline!", type: InfoType.WARNING });
             return;
         }
 
         if (username.length < 3 || username.length > 20) {
-            setInfo({ message: "Username length must between 3-20!", type: registraInfoType.WARNING });
+            setInfo({ message: "Username length must between 3-20!", type: InfoType.WARNING });
             return;
         }
 
         try {
-            setInfo({ message: "Validating...", type: registraInfoType.VALIDATING })
+            setInfo({ message: "Validating...", type: InfoType.VALIDATING })
             const response = await checkUsername(username);
             const exist = response.data;
 
             if (exist) {
-                setInfo({ message: `Username ${username} exists!`, type: registraInfoType.WARNING });
+                setInfo({ message: `Username ${username} exists!`, type: InfoType.WARNING });
             }
             else
-                setInfo({ message: "Username available!", type: registraInfoType.AVAILABLE });
+                setInfo({ message: "Username available!", type: InfoType.AVAILABLE });
         }
 
         catch (e: any) {
-            setInfo({ message: "Error" + (e.response?.data?.message ?? e.message), type: registraInfoType.WARNING })
+            setInfo({ message: "Error" + (e.response?.data?.message ?? e.message), type: InfoType.WARNING })
         }
     };
 
@@ -61,17 +61,17 @@ export function useUsernameCheck() {
  * @returns validatePwd: Function to help check the availability of password
  */
 export function usePasswordCheck() {
-    const [pwdInfo, setPwdInfo] = useState<Info>({ message: "", type: registraInfoType.EMPTY });
+    const [pwdInfo, setPwdInfo] = useState<Info>({ message: "", type: InfoType.EMPTY });
 
     const specialList = "!@#$%^&*()_+=-";
 
     const validatePwd = (password: string) => {
         if (!password.trim()) {
-            setPwdInfo({ message: "Password cannot be empty!", type: registraInfoType.WARNING });
+            setPwdInfo({ message: "Password cannot be empty!", type: InfoType.WARNING });
             return;
         }
         if (password.length < 8 || password.length > 30) {
-            setPwdInfo({ message: "Password must be within 8-30 characters!", type: registraInfoType.WARNING });
+            setPwdInfo({ message: "Password must be within 8-30 characters!", type: InfoType.WARNING });
             return;
         }
 
@@ -94,11 +94,11 @@ export function usePasswordCheck() {
 
         const checklist = [num, upper, lower, special].filter(Boolean).length;
         if (checklist < 3) {
-            setPwdInfo({ message: "Password must contains at least 3 types of following characters: one of '!@#$%^&*()_+=-', uppercase, lowercase, and number!", type: registraInfoType.WARNING });
+            setPwdInfo({ message: "Password must contains at least 3 types of following characters: one of '!@#$%^&*()_+=-', uppercase, lowercase, and number!", type: InfoType.WARNING });
             return;
         }
 
-        setPwdInfo({ message: "Password valid.", type: registraInfoType.AVAILABLE })
+        setPwdInfo({ message: "Password valid.", type: InfoType.AVAILABLE })
     };
 
     return { pwdInfo, validatePwd };

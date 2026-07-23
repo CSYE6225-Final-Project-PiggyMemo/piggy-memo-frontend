@@ -1,3 +1,4 @@
+//Reuse infotype and info from regcheck
 import { InfoType, Info } from "./Info";
 
 /**
@@ -7,7 +8,7 @@ import { InfoType, Info } from "./Info";
  */
 export function allValid(list: Info[]) {
     for (const i of list) {
-        if (i.type != InfoType.AVAILABLE) return false;
+        if (i.type != InfoType.EMPTY) return false;
     }
     return true;
 }

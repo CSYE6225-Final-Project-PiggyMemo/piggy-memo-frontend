@@ -1,14 +1,14 @@
-import { registraInfoType } from "@/lib/RegistraCheck";
+import { InfoType } from "@/lib/Info";
 import styles from "../register.module.css";
 
 // Status text colors keyed off the existing Info type enum.
 // Presentation only — the enum + logic that produces these values live in
 // src/hooks/useRegistraCheck.ts and are untouched.
 const STATUS_STYLES = {
-  [registraInfoType.EMPTY]: "",
-  [registraInfoType.VALIDATING]: "text-zinc-500 dark:text-zinc-400",
-  [registraInfoType.WARNING]: "text-rose-600 dark:text-rose-400",
-  [registraInfoType.AVAILABLE]: "text-emerald-600 dark:text-emerald-400",
+  [InfoType.EMPTY]: "",
+  [InfoType.VALIDATING]: "text-zinc-500 dark:text-zinc-400",
+  [InfoType.WARNING]: "text-rose-600 dark:text-rose-400",
+  [InfoType.AVAILABLE]: "text-emerald-600 dark:text-emerald-400",
 };
 
 export function Field({ label, htmlFor, children, info }) {
