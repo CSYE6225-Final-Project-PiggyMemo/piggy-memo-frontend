@@ -41,3 +41,20 @@ export const createUser = (data: CreateUserRequest) =>
 */
 export const checkUsername = (username: string) =>
     request.get<boolean>(`${BASEURL}/exists`, {params: {username: username}});
+
+/**
+ * Response body for GET /api/me: only the username, resolved server-side
+ * from the authenticated principal (see TestController#getMethodName).
+ * @param username the logged-in user's username.
+*/
+export interface CurrentUserResponse {
+    username: string;
+}
+
+/**
+ * Fetch the currently authenticated user (based on the jwt cookie).
+ * Note: this hits /api/me, not /api/users/me — that's where the backend
+ * actually exposes it (see TestController), not under the /api/users prefix.
+ * @returns { username } for the logged-in user
+ */
+export const getCurrentUser = () => request.get<CurrentUserResponse>("/api/me");
