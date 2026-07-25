@@ -18,3 +18,9 @@ export interface LoginRequest {
  * @returns cookies with jwt token.
  */
 export const login = (data: LoginRequest) => request.post(`${baseURL}/login`, data);
+
+/**
+ * Logout request
+ * @returns clears the jwt cookie set by /login
+ */
+export const logout = () => request.post(`${baseURL}/logout`);

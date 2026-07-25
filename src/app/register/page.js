@@ -3,9 +3,10 @@ import { useState } from "react";
 import { createUser } from "@/api/user";
 import { usePasswordCheck, useUsernameCheck } from "@/hooks/useRegistraCheck";
 import * as regCheck from "@/lib/RegistraCheck";
-import { EyeIcon, EyeOffIcon, Spinner } from "./_components/icons";
-import { Field, inputClass } from "./_components/field";
-import styles from "./register.module.css";
+import { PiggyMark, EyeIcon, EyeOffIcon, Spinner } from "@/components/icons";
+import { Field, inputClass } from "@/components/field";
+import { GradientBackdrop } from "@/components/backdrop";
+import styles from "@/components/animations.module.css";
 
 export default function Home() {
   // Hooks for the page
@@ -45,17 +46,17 @@ export default function Home() {
   }
 
   return (
-    <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-rose-50 via-zinc-50 to-white px-4 py-16 font-sans dark:from-zinc-950 dark:via-black dark:to-black">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-rose-200/40 blur-3xl dark:bg-rose-500/10" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl dark:bg-amber-500/10" />
-
+    <GradientBackdrop className="flex flex-1 items-center justify-center px-4 py-16 font-sans">
       <div className={`relative w-full max-w-sm ${styles.fadeInUp}`}>
         {/* Brand + heading */}
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-100 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400">
+            <PiggyMark className="h-6 w-6" />
+          </span>
+          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-rose-100">
             Create your account
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-500 dark:text-rose-300/70">
             Start saving your memos with PiggyMemo.
           </p>
         </div>
@@ -123,13 +124,13 @@ export default function Home() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-6 text-center text-sm text-zinc-500 dark:text-rose-300/70">
           Already have an account?{" "}
-          <a href="/login" className="font-medium text-black underline underline-offset-2 dark:text-white">
+          <a href="/login" className="font-medium text-black underline underline-offset-2 dark:text-rose-100">
             Log in
           </a>
         </p>
       </div>
-    </div>
+    </GradientBackdrop>
   );
 }
