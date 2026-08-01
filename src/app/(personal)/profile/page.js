@@ -1,14 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/api/user";
 import { getProfile, updateProfile } from "@/api/profile";
-import { logout } from "@/api/auth";
 import {
-  PiggyMark, LogoutIcon, Spinner,
+  Spinner,
   EditIcon, CheckIcon, XIcon, CameraIcon,
 } from "@/components/icons";
-import { GradientBackdrop } from "@/components/backdrop";
 import styles from "@/components/animations.module.css";
 
 const fieldInput =
@@ -44,13 +41,11 @@ function Avatar({ url, initial, editing, onClick }) {
 }
 
 export default function Home() {
-  const router = useRouter();
   const fileInputRef = useRef(null);
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [loggingOut, setLoggingOut] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({});
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -76,12 +71,6 @@ export default function Home() {
     })();
     return () => { cancelled = true; };
   }, []);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try { await logout(); } catch {}
-    router.push("/login");
-  }
 
   function startEdit() {
     setDraft({ ...user });
@@ -129,30 +118,9 @@ export default function Home() {
   const initial = user?.username?.[0]?.toUpperCase() ?? "?";
   const displayName = user?.nickname || user?.username || "—";
   const displayAvatar = avatarPreview || draft.avatarUrl;
-
   return (
-    <GradientBackdrop className="flex flex-1 flex-col font-sans">
-      {/* Top bar */}
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-black/80">
-        <div className="mx-auto flex h-16 w-full max-w-2xl items-center justify-between px-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400">
-              <PiggyMark className="h-4 w-4" />
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-black dark:text-rose-100">PiggyMemo</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="flex h-9 items-center gap-1.5 rounded-full border border-zinc-200 px-3.5 text-sm font-medium text-zinc-600 transition-all hover:bg-zinc-100 active:scale-95 disabled:opacity-60 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
-          >
-            {loggingOut ? <Spinner className="h-3.5 w-3.5" /> : <LogoutIcon className="h-3.5 w-3.5" />}
-            {loggingOut ? "Logging out..." : "Log out"}
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
+    <>
+        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
         {loading ? (
           <div className="animate-pulse space-y-4">
             <div className="h-36 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />
@@ -212,7 +180,7 @@ export default function Home() {
 
           </div>
         )}
-      </main>
+        </main>
 
       {/* Edit modal */}
       {editing && (
@@ -301,6 +269,6 @@ export default function Home() {
           </div>
         </div>
       )}
-    </GradientBackdrop>
+    </>
   );
 }
