@@ -8,19 +8,15 @@ import {
     CircleUserRound,
     House,
     PiggyBank,
+    BarChart2,
+    PenLine,
 } from "lucide-react";
 
 const menuItems = [
-    {
-        label: "Overview",
-        href: "/dashboard",
-        icon: House,
-    },
-    {
-        label: "Profile",
-        href: "/profile",
-        icon: CircleUserRound,
-    },
+    { label: "Overview",   href: "/dashboard",  icon: House },
+    { label: "Statistics", href: "/statistics",  icon: BarChart2 },
+    { label: "Log",        href: "/log",         icon: PenLine },
+    { label: "Profile",    href: "/profile",     icon: CircleUserRound },
 ];
 
 function SidebarLink({ item, expanded, activePath }) {
