@@ -1,269 +1,563 @@
 "use client";
-import { useEffect, useState } from "react";
-import { fetchBudget, setBudget, removeBudget } from "@/api/budget";
-import styles from "@/components/animations.module.css";
 
-function formatCurrency(n) {
-  if (n == null) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency", currency: "USD", minimumFractionDigits: 2,
-  }).format(n);
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Trash2, WalletCards, X } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { getOverview } from "@/api/dashboard";
+import { deleteBudget, fetchBudget, setBudget } from "@/api/budget";
+
+const numberFormatter = new Intl.NumberFormat("zh-CN", {
+  maximumFractionDigits: 2,
+});
+
+function formatAmount(value) {
+  return numberFormatter.format(Number(value) || 0);
 }
 
-function formatDate(str) {
-  if (!str) return "—";
-  const d = new Date(str + "T00:00:00");
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+function formatDate(value) {
+  const match = String(value).match(/^\d{4}-(\d{2})-(\d{2})/);
+
+  if (!match) return value;
+
+  return `${Number(match[1])}月${Number(match[2])}日`;
 }
 
-function todayString() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-/* ── Stat card ─────────────────────────────────────────────────────────── */
-function StatCard({ label, value, sub }) {
-  return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">
-        {label}
-      </p>
-      <p className="text-2xl font-semibold text-black dark:text-rose-100">{value}</p>
-      {sub && <p className="mt-1 text-xs text-zinc-400 dark:text-rose-300/40">{sub}</p>}
-    </div>
-  );
-}
-
-/* ── Set / Edit modal ──────────────────────────────────────────────────── */
-function BudgetModal({ initial, onSave, onClose }) {
-  const [monthly, setMonthly] = useState(initial?.currentBudget ?? "");
-  const [daily, setDaily] = useState(initial?.currentDailyLimit ?? "");
-  const [startDate, setStartDate] = useState(initial?.nextPeriodFirstDay ?? todayString());
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleSave() {
-    const m = parseFloat(monthly);
-    const d = parseFloat(daily);
-    if (isNaN(m) || m < 0) { setError("Monthly budget must be a non-negative number."); return; }
-    if (isNaN(d) || d < 0) { setError("Daily limit must be a non-negative number."); return; }
-    if (d > m) { setError("Daily limit cannot exceed monthly budget."); return; }
-    if (startDate < todayString()) { setError("Period start date cannot be in the past."); return; }
-
-    setSaving(true);
-    setError("");
-    try {
-      await onSave({ newMonthlyBudget: m, newDailyLimit: d, newPeriodFirstDay: startDate });
-    } catch (e) {
-      setError(e.response?.data?.message ?? e.message ?? "Couldn't save budget.");
-      setSaving(false);
-    }
-  }
-
-  const inputClass =
-    "w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3.5 py-2 text-sm text-black " +
-    "placeholder:text-zinc-400 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-100 " +
-    "dark:border-zinc-700 dark:bg-zinc-900 dark:text-rose-100 dark:placeholder:text-rose-300/40 " +
-    "dark:focus:ring-rose-900/40 transition-all";
+function SpendingTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div className={`${styles.popIn} w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950`}>
-        <div className="mb-5 flex items-center justify-between">
-          <p className="font-medium text-black dark:text-rose-100">
-            {initial?.currentBudget != null ? "Edit budget" : "Set budget"}
-          </p>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900">
-            ✕
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">
-              Monthly budget ($)
-            </label>
-            <input type="number" min="0" step="0.01" className={inputClass}
-              placeholder="e.g. 500.00" value={monthly}
-              onChange={(e) => setMonthly(e.target.value)} autoFocus={false} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">
-              Daily limit ($)
-            </label>
-            <input type="number" min="0" step="0.01" className={inputClass}
-              placeholder="e.g. 50.00" value={daily}
-              onChange={(e) => setDaily(e.target.value)} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">
-              Period start date
-            </label>
-            <input type="date" className={inputClass} min={todayString()}
-              value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </div>
-        </div>
-
-        {error && (
-          <p className={`${styles.popIn} mt-3 text-center text-sm text-rose-600 dark:text-rose-400`}>{error}</p>
-        )}
-
-        <button
-          onClick={handleSave} disabled={saving}
-          className="mt-5 h-11 w-full rounded-full bg-rose-500 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Save budget"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ── Delete confirmation ───────────────────────────────────────────────── */
-function DeleteConfirm({ onConfirm, onCancel, deleting }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-    >
-      <div className={`${styles.popIn} w-full max-w-xs rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950`}>
-        <p className="text-center font-medium text-black dark:text-rose-100">Remove budget?</p>
-        <p className="mt-2 text-center text-sm text-zinc-500 dark:text-rose-300/70">
-          This will delete your budget settings. Your transaction history won't be affected.
+      <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <p className="text-zinc-500 dark:text-rose-300/60">{label}</p>
+        <p className="mt-1 font-medium text-zinc-950 dark:text-rose-100">
+          Spending: {formatAmount(payload[0].value)}
         </p>
-        <div className="mt-5 flex gap-3">
-          <button onClick={onCancel} disabled={deleting}
-            className="flex-1 h-10 rounded-full border border-zinc-200 text-sm text-zinc-600 transition-all hover:bg-zinc-100 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900">
-            Cancel
-          </button>
-          <button onClick={onConfirm} disabled={deleting}
-            className="flex-1 h-10 rounded-full bg-rose-500 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95 disabled:opacity-60">
-            {deleting ? "Removing..." : "Remove"}
-          </button>
-        </div>
       </div>
-    </div>
   );
 }
 
-/* ── Page ──────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const [budget, setBudgetState] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [budgetDetails, setBudgetDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [budgetDraft, setBudgetDraft] = useState({
+    monthlyBudget: "",
+    dailyLimit: "",
+    periodFirstDay: "",
+  });
+  const [budgetSaving, setBudgetSaving] = useState(false);
+  const [budgetDeleting, setBudgetDeleting] = useState(false);
+  const [budgetError, setBudgetError] = useState("");
+  const [budgetLoadError, setBudgetLoadError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    fetchBudget()
-      .then((res) => { if (!cancelled) setBudgetState(res.data); })
-      .catch((e) => { if (!cancelled) setError(e.response?.data?.message ?? "Couldn't load budget."); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+
+    async function loadDashboard() {
+      try {
+        const response = await getOverview();
+        if (!cancelled) setDashboard(response.data);
+      } catch (requestError) {
+        if (!cancelled && requestError.response?.status !== 401) {
+          setError(
+              requestError.response?.data?.message ??
+              requestError.message ??
+              "Couldn't load the dashboard.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadDashboard();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  async function handleSave(data) {
-    const res = await setBudget(data);
-    setBudgetState(res.data);
-    setShowModal(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBudget() {
+      try {
+        const response = await fetchBudget();
+        if (!cancelled) {
+          setBudgetDetails(response.data);
+          setBudgetLoadError("");
+        }
+      } catch (requestError) {
+        if (!cancelled && requestError.response?.status !== 401) {
+          setBudgetLoadError(
+              requestError.response?.data?.message ??
+              requestError.message ??
+              "Couldn't load your budget settings.",
+          );
+        }
+      }
+    }
+
+    loadBudget();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const budget = dashboard?.budgetExecution;
+  const monthlyBudget = Math.max(Number(budget?.monthlyBudget) || 0, 0);
+  const budgetLeft = Number(budget?.budgetLeft) || 0;
+  const amountSpent = Math.max(monthlyBudget - budgetLeft, 0);
+  const budgetProgress = monthlyBudget
+      ? Math.min((amountSpent / monthlyBudget) * 100, 100)
+      : 0;
+
+  const chartData = useMemo(
+      () =>
+          (dashboard?.monthlySpending ?? []).map(({ date, amount }) => ({
+            date: formatDate(date),
+            Spending: Number(amount) || 0,
+          })),
+      [dashboard?.monthlySpending],
+  );
+
+  function openBudgetModal() {
+    setBudgetDraft({
+      monthlyBudget: String(
+          budgetDetails?.currentBudget ?? monthlyBudget ?? "",
+      ),
+      dailyLimit: String(budgetDetails?.currentDailyLimit ?? ""),
+      periodFirstDay: budgetDetails?.nextPeriodFirstDay?.slice(0, 10) ?? "",
+    });
+    setBudgetError("");
+    setBudgetModalOpen(true);
   }
 
-  async function handleDelete() {
-    setDeleting(true);
+  function closeBudgetModal() {
+    if (budgetSaving || budgetDeleting) return;
+    setBudgetModalOpen(false);
+    setBudgetError("");
+  }
+
+  async function handleBudgetSubmit(event) {
+    event.preventDefault();
+    const newMonthlyBudget = Number(budgetDraft.monthlyBudget);
+    const newDailyLimit = Number(budgetDraft.dailyLimit);
+
+    if (
+        !Number.isFinite(newMonthlyBudget) ||
+        !Number.isFinite(newDailyLimit) ||
+        newMonthlyBudget < 0 ||
+        newDailyLimit < 0
+    ) {
+      setBudgetError("Budget and daily limit must be 0 or greater.");
+      return;
+    }
+
+    if (!budgetDraft.periodFirstDay) {
+      setBudgetError("Choose the first day of the next budget period.");
+      return;
+    }
+
+    setBudgetSaving(true);
+    setBudgetError("");
     try {
-      await removeBudget();
-      setBudgetState({ currentBudget: null, currentDailyLimit: null, nextPeriodFirstDay: null, budgetLeft: null });
-      setShowDelete(false);
-    } catch (e) {
-      setError(e.response?.data?.message ?? "Couldn't remove budget.");
+      const response = await setBudget({
+        newMonthlyBudget,
+        newDailyLimit,
+        newPeriodFirstDay: budgetDraft.periodFirstDay,
+      });
+      setBudgetDetails(response.data);
+      setBudgetLoadError("");
+      setDashboard((current) => ({
+        ...current,
+        budgetExecution: {
+          monthlyBudget: response.data.currentBudget,
+          budgetLeft: response.data.budgetLeft,
+        },
+      }));
+      setBudgetModalOpen(false);
+    } catch (requestError) {
+      setBudgetError(
+          requestError.response?.data?.message ??
+          requestError.message ??
+          "Couldn't save your budget.",
+      );
     } finally {
-      setDeleting(false);
+      setBudgetSaving(false);
     }
   }
 
-  const hasBudget = budget?.currentBudget != null;
+  async function handleBudgetDelete() {
+    if (!window.confirm("Remove your current monthly budget?")) return;
 
-  if (loading) {
-    return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 space-y-4">
-        <div className="animate-pulse h-10 w-48 rounded-2xl bg-zinc-200/70 dark:bg-zinc-900" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[1,2,3].map((i) => <div key={i} className="animate-pulse h-32 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />)}
-        </div>
-      </main>
-    );
+    setBudgetDeleting(true);
+    setBudgetError("");
+    try {
+      await deleteBudget();
+      setBudgetDetails(null);
+      setBudgetLoadError("");
+      setDashboard((current) => ({
+        ...current,
+        budgetExecution: { monthlyBudget: 0, budgetLeft: 0 },
+      }));
+      setBudgetModalOpen(false);
+    } catch (requestError) {
+      setBudgetError(
+          requestError.response?.data?.message ??
+          requestError.message ??
+          "Couldn't remove your budget.",
+      );
+    } finally {
+      setBudgetDeleting(false);
+    }
   }
 
   return (
-    <main className={`mx-auto w-full max-w-5xl flex-1 px-4 py-10 ${styles.fadeInUp}`}>
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-rose-100">Dashboard</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowModal(true)}
-            className="h-9 rounded-full bg-rose-500 px-4 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95"
-          >
-            {hasBudget ? "Edit budget" : "Set budget"}
-          </button>
-          {hasBudget && (
-            <button
-              onClick={() => setShowDelete(true)}
-              className="h-9 rounded-full border border-zinc-200 px-4 text-sm font-medium text-zinc-600 transition-all hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <p className="mb-4 text-sm text-rose-600 dark:text-rose-400">{error}</p>
-      )}
-
-      {/* Budget cards */}
-      {hasBudget ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            label="Monthly budget"
-            value={formatCurrency(budget.currentBudget)}
-            sub={budget.budgetLeft != null ? `${formatCurrency(budget.budgetLeft)} remaining` : null}
-          />
-          <StatCard
-            label="Daily limit"
-            value={formatCurrency(budget.currentDailyLimit)}
-          />
-          <StatCard
-            label="Next period"
-            value={formatDate(budget.nextPeriodFirstDay)}
-          />
-        </div>
-      ) : (
-        <div className="rounded-3xl border border-dashed border-zinc-300 bg-white/60 p-10 text-center dark:border-zinc-700 dark:bg-zinc-950/40">
-          <p className="text-sm font-medium text-black dark:text-rose-100">No budget set</p>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-rose-100">
+            Dashboard
+          </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-rose-300/70">
-            Set a monthly budget and daily limit to start tracking your spending.
+            Track your budget and daily spending for this month.
           </p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="mt-4 h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95"
-          >
-            Set budget
-          </button>
         </div>
-      )}
 
-      {/* Modals */}
-      {showModal && (
-        <BudgetModal initial={budget} onSave={handleSave} onClose={() => setShowModal(false)} />
-      )}
-      {showDelete && (
-        <DeleteConfirm onConfirm={handleDelete} onCancel={() => setShowDelete(false)} deleting={deleting} />
-      )}
-    </main>
+        {loading ? (
+            <div className="grid animate-pulse gap-4">
+              <div className="h-52 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />
+              <div className="h-80 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />
+            </div>
+        ) : error ? (
+            <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+              <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
+              <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-4 h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition hover:bg-rose-600 active:scale-95"
+              >
+                Try again
+              </button>
+            </div>
+        ) : (
+            <div className="grid gap-4">
+              <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <WalletCards className="size-4 text-rose-500" aria-hidden="true" />
+                    <p className="text-sm font-medium text-zinc-500 dark:text-rose-300/70">
+                      Budget execution
+                    </p>
+                  </div>
+                  <button
+                      type="button"
+                      onClick={openBudgetModal}
+                      className="flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
+                  >
+                    <Pencil className="size-3.5" aria-hidden="true" />
+                    Manage budget
+                  </button>
+                </div>
+                {budgetLoadError && (
+                    <p
+                        role="alert"
+                        className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
+                    >
+                      {budgetLoadError}
+                    </p>
+                )}
+                <div className="mt-5 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-rose-100">
+                      {budgetProgress.toFixed(0)}%
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-rose-300/60">
+                      used this month
+                    </p>
+                  </div>
+                  <p className="text-right text-sm text-zinc-600 dark:text-rose-200">
+                    {formatAmount(amountSpent)} / {formatAmount(monthlyBudget)}
+                  </p>
+                </div>
+                <div
+                    className="mt-5 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(budgetProgress)}
+                    aria-label={`${budgetProgress.toFixed(0)}% of the monthly budget used`}
+                >
+                  <div
+                      className="h-full rounded-full bg-rose-500 transition-[width] duration-500"
+                      style={{ width: `${budgetProgress}%` }}
+                  />
+                </div>
+                <div className="mt-4 flex items-center justify-between text-xs">
+                  <span className="text-zinc-500 dark:text-rose-300/60">Remaining</span>
+                  <span
+                      className={
+                        budgetLeft < 0
+                            ? "font-medium text-rose-600 dark:text-rose-400"
+                            : "font-medium text-zinc-700 dark:text-rose-200"
+                      }
+                  >
+                {formatAmount(budgetLeft)}
+              </span>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-sm font-medium text-zinc-950 dark:text-rose-100">
+                      Monthly spending
+                    </h2>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-rose-300/60">
+                      Daily spending during the current month
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-500 dark:text-rose-300/60">Total</p>
+                    <p className="text-lg font-semibold text-zinc-950 dark:text-rose-100">
+                      {formatAmount(
+                          chartData.reduce((total, item) => total + item.Spending, 0),
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {chartData.length ? (
+                    <div className="mt-6 h-64 w-full text-zinc-500 dark:text-rose-300/60">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={chartData}
+                            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+                            accessibilityLayer
+                        >
+                          <CartesianGrid
+                              stroke="currentColor"
+                              strokeDasharray="3 3"
+                              vertical={false}
+                              opacity={0.18}
+                          />
+                          <XAxis
+                              dataKey="date"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: "currentColor", fontSize: 12 }}
+                              tickMargin={10}
+                          />
+                          <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: "currentColor", fontSize: 12 }}
+                              tickFormatter={formatAmount}
+                              width={54}
+                          />
+                          <Tooltip
+                              content={<SpendingTooltip />}
+                              cursor={{ fill: "currentColor", opacity: 0.06 }}
+                          />
+                          <Bar
+                              dataKey="Spending"
+                              fill="#f43f5e"
+                              radius={[5, 5, 0, 0]}
+                              animationDuration={500}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="mt-6 flex h-64 items-center justify-center rounded-2xl bg-zinc-50 text-sm text-zinc-400 dark:bg-zinc-900/60 dark:text-rose-300/40">
+                      No spending data this month.
+                    </div>
+                )}
+              </section>
+            </div>
+        )}
+
+        {budgetModalOpen && (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
+                role="presentation"
+                onMouseDown={(event) => {
+                  if (event.target === event.currentTarget) closeBudgetModal();
+                }}
+            >
+              <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="budget-dialog-title"
+                  className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2
+                        id="budget-dialog-title"
+                        className="font-semibold text-zinc-950 dark:text-rose-100"
+                    >
+                      Manage monthly budget
+                    </h2>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-rose-300/60">
+                      Set a limit to keep this month&apos;s spending on track.
+                    </p>
+                  </div>
+                  <button
+                      type="button"
+                      onClick={closeBudgetModal}
+                      aria-label="Close budget management"
+                      className="flex size-8 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-900 dark:hover:text-rose-100"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+
+                {budgetDetails && (
+                    <dl className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900/70">
+                      <div>
+                        <dt className="text-xs text-zinc-500 dark:text-rose-300/60">
+                          Daily limit
+                        </dt>
+                        <dd className="mt-1 text-sm font-semibold text-zinc-950 dark:text-rose-100">
+                          {formatAmount(budgetDetails.currentDailyLimit)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-zinc-500 dark:text-rose-300/60">
+                          Next period
+                        </dt>
+                        <dd className="mt-1 text-sm font-semibold text-zinc-950 dark:text-rose-100">
+                          {budgetDetails.nextPeriodFirstDay || "—"}
+                        </dd>
+                      </div>
+                    </dl>
+                )}
+
+                <form onSubmit={handleBudgetSubmit} className="mt-5">
+                  {budgetLoadError && (
+                      <p
+                          role="alert"
+                          className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
+                      >
+                        {budgetLoadError}
+                      </p>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                          htmlFor="monthly-budget"
+                          className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70"
+                      >
+                        Monthly budget
+                      </label>
+                      <input
+                          id="monthly-budget"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="decimal"
+                          required
+                          autoFocus
+                          value={budgetDraft.monthlyBudget}
+                          onChange={(event) =>
+                              setBudgetDraft((current) => ({
+                                ...current,
+                                monthlyBudget: event.target.value,
+                              }))
+                          }
+                          placeholder="e.g. 3000"
+                          className="mt-2 h-11 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-rose-100 dark:focus:ring-rose-900/40"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                          htmlFor="daily-limit"
+                          className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70"
+                      >
+                        Daily limit
+                      </label>
+                      <input
+                          id="daily-limit"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="decimal"
+                          required
+                          value={budgetDraft.dailyLimit}
+                          onChange={(event) =>
+                              setBudgetDraft((current) => ({
+                                ...current,
+                                dailyLimit: event.target.value,
+                              }))
+                          }
+                          placeholder="e.g. 100"
+                          className="mt-2 h-11 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-rose-100 dark:focus:ring-rose-900/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label
+                        htmlFor="period-first-day"
+                        className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70"
+                    >
+                      Next period first day
+                    </label>
+                    <input
+                        id="period-first-day"
+                        type="date"
+                        required
+                        value={budgetDraft.periodFirstDay}
+                        onChange={(event) =>
+                            setBudgetDraft((current) => ({
+                              ...current,
+                              periodFirstDay: event.target.value,
+                            }))
+                        }
+                        className="mt-2 h-11 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm text-zinc-950 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-rose-100 dark:focus:ring-rose-900/40"
+                    />
+                  </div>
+
+                  {budgetError && (
+                      <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">
+                        {budgetError}
+                      </p>
+                  )}
+
+                  <div className="mt-5 flex items-center gap-3">
+                    {budgetDetails && (
+                        <button
+                            type="button"
+                            onClick={handleBudgetDelete}
+                            disabled={budgetSaving || budgetDeleting}
+                            className="flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                          {budgetDeleting ? "Removing..." : "Remove"}
+                        </button>
+                    )}
+                    <button
+                        type="submit"
+                        disabled={budgetSaving || budgetDeleting}
+                        className="ml-auto h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition hover:bg-rose-600 active:scale-95 disabled:opacity-50"
+                    >
+                      {budgetSaving ? "Saving..." : budgetDetails ? "Update budget" : "Set budget"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        )}
+      </main>
   );
 }

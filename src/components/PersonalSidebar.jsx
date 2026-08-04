@@ -88,11 +88,11 @@ function SidebarLink({ item, expanded, activePath }) {
 }
 
 export default function PersonalSidebar({
-    activePath = "/profile",
-    expanded: controlledExpanded,
-    defaultExpanded = true,
-    onExpandedChange,
-}) {
+                                            activePath = "/profile",
+                                            expanded: controlledExpanded,
+                                            defaultExpanded = true,
+                                            onExpandedChange,
+                                        }) {
     const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
     const expanded = controlledExpanded ?? uncontrolledExpanded;
 
