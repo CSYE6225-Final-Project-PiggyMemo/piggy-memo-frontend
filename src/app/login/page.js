@@ -28,7 +28,7 @@ export default function Home() {
     setResult("");
     try {
       await login({ username, password });
-      router.push("/profile");
+      router.push("/dashboard");
     } catch (error) {
       setResult(error.response?.data?.message ?? error.message ?? "Something went wrong.");
     } finally {

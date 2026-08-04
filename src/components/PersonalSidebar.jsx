@@ -5,21 +5,21 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import {
     ChevronLeft,
     ChevronRight,
-    CircleUserRound,
-    House,
+    LayoutDashboard,
     PiggyBank,
+    UserRound,
 } from "lucide-react";
 
 const menuItems = [
     {
         label: "Dashboard",
         href: "/dashboard",
-        icon: House,
+        icon: LayoutDashboard,
     },
     {
         label: "Profile",
         href: "/profile",
-        icon: CircleUserRound,
+        icon: UserRound,
     },
 ];
 
@@ -92,7 +92,7 @@ function SidebarLink({ item, expanded, activePath }) {
 }
 
 export default function PersonalSidebar({
-    activePath = "/profile",
+    activePath = "/dashboard",
     expanded: controlledExpanded,
     defaultExpanded = true,
     onExpandedChange,
