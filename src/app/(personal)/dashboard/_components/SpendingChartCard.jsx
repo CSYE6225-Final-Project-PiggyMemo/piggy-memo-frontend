@@ -42,7 +42,7 @@ export default function SpendingChartCard({ chartData }) {
               Monthly spending
             </h2>
             <p className="mt-1 text-xs text-zinc-500 dark:text-rose-300/60">
-              Daily spending during the current month
+              Spending break-up of current month
             </p>
           </div>
           <div className="text-right">
