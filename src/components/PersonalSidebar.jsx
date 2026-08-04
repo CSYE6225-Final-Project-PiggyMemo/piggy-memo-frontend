@@ -5,22 +5,18 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import {
     ChevronLeft,
     ChevronRight,
-    LayoutDashboard,
+    CircleUserRound,
+    House,
     PiggyBank,
-    UserRound,
+    BarChart2,
+    PenLine,
 } from "lucide-react";
 
 const menuItems = [
-    {
-        label: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-    },
-    {
-        label: "Profile",
-        href: "/profile",
-        icon: UserRound,
-    },
+    { label: "Overview",   href: "/dashboard",  icon: House },
+    { label: "Statistics", href: "/statistics",  icon: BarChart2 },
+    { label: "Log",        href: "/log",         icon: PenLine },
+    { label: "Profile",    href: "/profile",     icon: CircleUserRound },
 ];
 
 function SidebarLink({ item, expanded, activePath }) {
@@ -92,11 +88,11 @@ function SidebarLink({ item, expanded, activePath }) {
 }
 
 export default function PersonalSidebar({
-    activePath = "/dashboard",
-    expanded: controlledExpanded,
-    defaultExpanded = true,
-    onExpandedChange,
-}) {
+                                            activePath = "/profile",
+                                            expanded: controlledExpanded,
+                                            defaultExpanded = true,
+                                            onExpandedChange,
+                                        }) {
     const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
     const expanded = controlledExpanded ?? uncontrolledExpanded;
 
