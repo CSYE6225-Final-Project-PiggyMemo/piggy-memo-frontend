@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { getOverview } from "@/api/dashboard";
 import { getTransactions } from "@/api/transaction";
+import { LoadErrorCard } from "@/components/LoadErrorCard";
 import styles from "@/components/animations.module.css";
 
 const CATEGORY_COLORS = {
@@ -109,12 +110,7 @@ export default function StatisticsPage() {
   if (error) {
     return (
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-950">
-          <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
-          <button onClick={() => window.location.reload()} className="mt-4 h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95">
-            Try again
-          </button>
-        </div>
+        <LoadErrorCard message={error} />
       </main>
     );
   }
