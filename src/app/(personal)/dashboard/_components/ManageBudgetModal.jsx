@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2, X } from "lucide-react";
+import { Modal } from "@/components/Modal";
 
 const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
@@ -23,19 +24,7 @@ export default function ManageBudgetModal({
   onDelete,
 }) {
   return (
-      <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) onClose();
-          }}
-      >
-        <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="budget-dialog-title"
-            className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
-        >
+      <Modal onClose={onClose} labelledBy="budget-dialog-title">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2
@@ -192,7 +181,6 @@ export default function ManageBudgetModal({
               </button>
             </div>
           </form>
-        </div>
-      </div>
+      </Modal>
   );
 }
