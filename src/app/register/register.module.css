@@ -1,4 +1,4 @@
-/* 只作用于 register 页面的动效, 用 CSS Module 隔离, 不影响其他页面/全局样式 */
+/* Animations scoped to the register page only, isolated via CSS Module — doesn't affect other pages/global styles */
 
 @keyframes fadeInUp {
   from {
