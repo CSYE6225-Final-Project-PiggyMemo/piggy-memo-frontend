@@ -6,6 +6,7 @@ import {
   Spinner,
   EditIcon, CheckIcon, XIcon, CameraIcon,
 } from "@/components/icons";
+import { LoadErrorCard } from "@/components/LoadErrorCard";
 import { Modal } from "@/components/Modal";
 import styles from "@/components/animations.module.css";
 
@@ -129,12 +130,7 @@ export default function Home() {
             <div className="h-20 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />
           </div>
         ) : loadError ? (
-          <div className={`${styles.fadeInUp} rounded-3xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-950`}>
-            <p className="text-sm text-rose-600 dark:text-rose-400">{loadError}</p>
-            <button onClick={() => window.location.reload()} className="mt-4 h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition-all hover:bg-rose-600 active:scale-95">
-              Try again
-            </button>
-          </div>
+          <LoadErrorCard message={loadError} />
         ) : (
           <div className={`flex flex-col gap-4 ${styles.fadeInUp}`}>
 

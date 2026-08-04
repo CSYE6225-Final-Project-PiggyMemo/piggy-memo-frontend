@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getOverview } from "@/api/dashboard";
 import { deleteBudget, fetchBudget, setBudget } from "@/api/budget";
+import { LoadErrorCard } from "@/components/LoadErrorCard";
 import ManageBudgetModal from "./_components/ManageBudgetModal";
 import MonthlyBudgetCard from "./_components/MonthlyBudgetCard";
 import SpendingChartCard from "./_components/SpendingChartCard";
@@ -216,16 +217,7 @@ export default function DashboardPage() {
               <div className="h-80 rounded-3xl bg-zinc-200/70 dark:bg-zinc-900" />
             </div>
         ) : error ? (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-              <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
-              <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="mt-4 h-10 rounded-full bg-rose-500 px-5 text-sm font-medium text-white transition hover:bg-rose-600 active:scale-95"
-              >
-                Try again
-              </button>
-            </div>
+            <LoadErrorCard message={error} />
         ) : (
             <div className="grid gap-4">
               <MonthlyBudgetCard
