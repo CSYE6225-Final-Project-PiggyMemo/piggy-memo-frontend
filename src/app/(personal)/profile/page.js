@@ -2,12 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import { getCurrentUser } from "@/api/user";
 import { getProfile, updateProfile } from "@/api/profile";
+import { getMyFamily } from "@/api/family";
 import {
   Spinner,
   EditIcon, CheckIcon, XIcon, CameraIcon,
 } from "@/components/icons";
 import { LoadErrorCard } from "@/components/LoadErrorCard";
 import { Modal } from "@/components/Modal";
+import CreateFamilyModal from "@/components/CreateFamilyModal";
+import JoinFamilyModal from "@/components/JoinFamilyModal";
 import styles from "@/components/animations.module.css";
 
 const fieldInput =
@@ -53,17 +56,22 @@ export default function Home() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [family, setFamily] = useState(null);
+  const [createFamilyModalOpen, setCreateFamilyModalOpen] = useState(false);
+  const [joinFamilyModalOpen, setJoinFamilyModalOpen] = useState(false);
+  const [joinRequestPending, setJoinRequestPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [userRes, profileRes] = await Promise.all([
+        const [userRes, profileRes, familyRes] = await Promise.all([
           getCurrentUser(),
           getProfile(),
+          getMyFamily(),
         ]);
         const merged = { ...profileRes.data, username: userRes.data.username };
-        if (!cancelled) { setUser(merged); setDraft(merged); }
+        if (!cancelled) { setUser(merged); setDraft(merged); setFamily(familyRes); }
       } catch (e) {
         if (!cancelled && e.response?.status !== 401)
           setLoadError(e.response?.data?.message ?? e.message ?? "Couldn't load your profile.");
@@ -85,6 +93,15 @@ export default function Home() {
     setEditing(false);
     setAvatarPreview(null);
     setSaveError("");
+  }
+
+  async function refreshFamily() {
+    try {
+      const result = await getMyFamily();
+      setFamily(result);
+    } catch {
+      // keep whatever was already shown rather than blanking the card on a transient refresh failure
+    }
   }
 
   function handleFileChange(e) {
@@ -169,10 +186,53 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Family card — placeholder */}
+            {/* Family card */}
             <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
               <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">Family</h2>
-              <p className="text-sm text-zinc-400 dark:text-rose-300/40">No family set</p>
+              {family ? (
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-black dark:text-rose-100">
+                      {family.familyName}
+                    </p>
+                    <p className="mt-1 font-mono text-xs text-zinc-500 dark:text-rose-300/70">
+                      {family.familyCode}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-rose-300/70">
+                      {family.role === "OWNER" ? "Owner" : "Member"} · {family.members.length}{" "}
+                      {family.members.length === 1 ? "member" : "members"}
+                    </p>
+                  </div>
+                  <a
+                    href="/family"
+                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
+                  >
+                    Manage family
+                  </a>
+                </div>
+              ) : joinRequestPending ? (
+                <p className="text-sm text-zinc-400 dark:text-rose-300/40">
+                  Request sent — waiting for the family owner to approve.
+                </p>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm text-zinc-400 dark:text-rose-300/40">No family set</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => setCreateFamilyModalOpen(true)}
+                      className="rounded-full border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
+                    >
+                      Create
+                    </button>
+                    <button
+                      onClick={() => setJoinFamilyModalOpen(true)}
+                      className="rounded-full bg-rose-500 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-rose-600 active:scale-95"
+                    >
+                      Join
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -260,6 +320,26 @@ export default function Home() {
               {saving ? "Saving..." : "Save changes"}
             </button>
         </Modal>
+      )}
+
+      {createFamilyModalOpen && (
+        <CreateFamilyModal
+          onClose={() => setCreateFamilyModalOpen(false)}
+          onCreated={() => {
+            setCreateFamilyModalOpen(false);
+            refreshFamily();
+          }}
+        />
+      )}
+
+      {joinFamilyModalOpen && (
+        <JoinFamilyModal
+          onClose={() => setJoinFamilyModalOpen(false)}
+          onRequested={() => {
+            setJoinFamilyModalOpen(false);
+            setJoinRequestPending(true);
+          }}
+        />
       )}
     </>
   );

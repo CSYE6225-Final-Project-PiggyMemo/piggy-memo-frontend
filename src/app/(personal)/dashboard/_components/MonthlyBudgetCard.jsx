@@ -17,6 +17,7 @@ export default function MonthlyBudgetCard({
   budgetLeft,
   budgetLoadError,
   onManage,
+  canManage = true,
 }) {
   return (
       <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -27,14 +28,20 @@ export default function MonthlyBudgetCard({
               Monthly budget
             </p>
           </div>
-          <button
-              type="button"
-              onClick={onManage}
-              className="flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
-          >
-            <Pencil className="size-3.5" aria-hidden="true" />
-            Manage budget
-          </button>
+          {canManage ? (
+              <button
+                  type="button"
+                  onClick={onManage}
+                  className="flex h-8 items-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
+              >
+                <Pencil className="size-3.5" aria-hidden="true" />
+                Manage budget
+              </button>
+          ) : (
+              <span className="text-xs text-zinc-400 dark:text-rose-300/40">
+                Managed by family owner
+              </span>
+          )}
         </div>
         {budgetLoadError && (
             <p

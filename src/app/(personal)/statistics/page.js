@@ -6,7 +6,9 @@ import {
 } from "recharts";
 import { getOverview } from "@/api/dashboard";
 import { getTransactions } from "@/api/transaction";
+import { getMyFamily } from "@/api/family";
 import { LoadErrorCard } from "@/components/LoadErrorCard";
+import FamilySpendingLineChart from "./_components/FamilySpendingLineChart";
 import styles from "@/components/animations.module.css";
 
 const CATEGORY_COLORS = {
@@ -53,6 +55,7 @@ function PieTooltip({ active, payload }) {
 export default function StatisticsPage() {
   const [overview, setOverview] = useState(null);
   const [categoryData, setCategoryData] = useState([]);
+  const [family, setFamily] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -60,12 +63,14 @@ export default function StatisticsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [overviewRes, txRes] = await Promise.all([
+        const [overviewRes, txRes, familyRes] = await Promise.all([
           getOverview(),
           getTransactions(200, 0),
+          getMyFamily(),
         ]);
         if (cancelled) return;
         setOverview(overviewRes.data);
+        setFamily(familyRes);
 
         // Group spending (positive amounts) by display category
         const totals = {};
@@ -165,6 +170,10 @@ export default function StatisticsPage() {
             </ResponsiveContainer>
           )}
         </div>
+
+        {family && (
+          <FamilySpendingLineChart memberSpending={overview?.memberSpending} members={family.members} />
+        )}
       </div>
     </main>
   );
