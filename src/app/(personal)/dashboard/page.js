@@ -116,6 +116,7 @@ export default function DashboardPage() {
   const canManageBudget = !family || family.role === "OWNER";
 
   const budget = dashboard?.budgetExecution;
+  const hasBudget = budget?.monthlyBudget != null;
   const monthlyBudget = Math.max(Number(budget?.monthlyBudget) || 0, 0);
   const budgetLeft = Number(budget?.budgetLeft) || 0;
   const amountSpent = Math.max(monthlyBudget - budgetLeft, 0);
@@ -246,6 +247,7 @@ export default function DashboardPage() {
         ) : (
             <div className="grid gap-4">
               <MonthlyBudgetCard
+                  hasBudget={hasBudget}
                   budgetProgress={budgetProgress}
                   amountSpent={amountSpent}
                   monthlyBudget={monthlyBudget}
