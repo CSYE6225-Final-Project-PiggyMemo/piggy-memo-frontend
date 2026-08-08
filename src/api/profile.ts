@@ -8,7 +8,6 @@ export interface Profile {
   nickname: string;
   bio: string;
   isProfilePublic: boolean;
-  family: number | null;
 }
 
 export interface ProfileUpdateRequest {
@@ -16,7 +15,6 @@ export interface ProfileUpdateRequest {
   nickname?: string;
   bio?: string;
   isProfilePublic?: boolean;
-  family?: number | null;
 }
 
 export function getProfile() {

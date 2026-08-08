@@ -12,9 +12,17 @@ export interface DailySpending {
   amount: number;
 }
 
+/** Per-family-member daily spending; only non-empty when the caller is in a family. */
+export interface FamilyMemberDailySpending {
+  date: string;
+  userId: number;
+  amount: number;
+}
+
 export interface OverviewDashboardResponse {
   budgetExecution: BudgetExecution;
   monthlySpending: DailySpending[];
+  memberSpending: FamilyMemberDailySpending[];
 }
 
 export function getOverview() {

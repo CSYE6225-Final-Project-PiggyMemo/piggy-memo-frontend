@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getOverview } from "@/api/dashboard";
 import { deleteBudget, fetchBudget, setBudget } from "@/api/budget";
+import { getMyFamily } from "@/api/family";
 import { LoadErrorCard } from "@/components/LoadErrorCard";
 import ManageBudgetModal from "./_components/ManageBudgetModal";
 import MonthlyBudgetCard from "./_components/MonthlyBudgetCard";
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [budgetDeleting, setBudgetDeleting] = useState(false);
   const [budgetError, setBudgetError] = useState("");
   const [budgetLoadError, setBudgetLoadError] = useState("");
+  const [family, setFamily] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,7 +93,30 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFamily() {
+      try {
+        const result = await getMyFamily();
+        if (!cancelled) setFamily(result);
+      } catch {
+        // Real enforcement of who can edit the budget happens server-side in
+        // BudgetService; a hiccup fetching the family here should never lock
+        // a legitimate owner out of their own budget UI, so default to permissive.
+      }
+    }
+
+    loadFamily();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const canManageBudget = !family || family.role === "OWNER";
+
   const budget = dashboard?.budgetExecution;
+  const hasBudget = budget?.monthlyBudget != null;
   const monthlyBudget = Math.max(Number(budget?.monthlyBudget) || 0, 0);
   const budgetLeft = Number(budget?.budgetLeft) || 0;
   const amountSpent = Math.max(monthlyBudget - budgetLeft, 0);
@@ -109,6 +134,7 @@ export default function DashboardPage() {
   );
 
   function openBudgetModal() {
+    if (!canManageBudget) return;
     setBudgetDraft({
       monthlyBudget: String(
           budgetDetails?.currentBudget ?? monthlyBudget ?? "",
@@ -135,9 +161,9 @@ export default function DashboardPage() {
         !Number.isFinite(newMonthlyBudget) ||
         !Number.isFinite(newDailyLimit) ||
         newMonthlyBudget < 0 ||
-        newDailyLimit < 0
+        newDailyLimit <= 0
     ) {
-      setBudgetError("Budget and daily limit must be 0 or greater.");
+      setBudgetError("Monthly budget must be 0 or greater, and daily limit must be greater than 0.");
       return;
     }
 
@@ -221,12 +247,14 @@ export default function DashboardPage() {
         ) : (
             <div className="grid gap-4">
               <MonthlyBudgetCard
+                  hasBudget={hasBudget}
                   budgetProgress={budgetProgress}
                   amountSpent={amountSpent}
                   monthlyBudget={monthlyBudget}
                   budgetLeft={budgetLeft}
                   budgetLoadError={budgetLoadError}
                   onManage={openBudgetModal}
+                  canManage={canManageBudget}
               />
 
               <SpendingChartCard chartData={chartData} />

@@ -6,7 +6,9 @@ import {
 } from "recharts";
 import { getOverview } from "@/api/dashboard";
 import { getTransactions } from "@/api/transaction";
+import { getMyFamily } from "@/api/family";
 import { LoadErrorCard } from "@/components/LoadErrorCard";
+import FamilySpendingLineChart from "./_components/FamilySpendingLineChart";
 import styles from "@/components/animations.module.css";
 
 const CATEGORY_COLORS = {
@@ -84,6 +86,7 @@ function SummaryCard({ label, value, color }) {
 export default function StatisticsPage() {
   const [overview, setOverview]         = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [family, setFamily]             = useState(null);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
   const [range, setRange]               = useState("this");
@@ -92,13 +95,15 @@ export default function StatisticsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [overviewRes, txRes] = await Promise.all([
+        const [overviewRes, txRes, familyRes] = await Promise.all([
           getOverview(),
           getTransactions(500, 0),
+          getMyFamily(),
         ]);
         if (cancelled) return;
         setOverview(overviewRes.data);
         setTransactions(txRes.data.records);
+        setFamily(familyRes);
       } catch {
         if (!cancelled) setError("Couldn't load statistics.");
       } finally {
@@ -151,6 +156,16 @@ export default function StatisticsPage() {
         saved: parseFloat(v.saved.toFixed(2)),
       }));
   }, [filtered, overview, range]);
+
+  // Computed from the same range-filtered transactions as everything else on this
+  // page (rather than the dashboard overview's memberSpending, which only ever
+  // covers the current calendar month) so the family chart tracks the time-range
+  // picker above like every other chart here. Every family transaction already
+  // carries the logger's userId, regardless of who's currently viewing the page.
+  const familyMemberSpending = useMemo(
+    () => filtered.map((tx) => ({ date: tx.time.slice(0, 10), userId: tx.userId, amount: tx.amount })),
+    [filtered]
+  );
 
   if (loading) {
     return (
@@ -260,6 +275,13 @@ export default function StatisticsPage() {
           )}
         </div>
       </div>
+
+      {/* Family spending by member — only for family members, tracks the same time range */}
+      {family && (
+        <div className="mt-4">
+          <FamilySpendingLineChart memberSpending={familyMemberSpending} members={family.members} />
+        </div>
+      )}
 
       {/* Category breakdown list */}
       {categoryData.length > 0 && (

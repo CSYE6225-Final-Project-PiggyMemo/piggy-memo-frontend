@@ -10,12 +10,14 @@ import {
     PiggyBank,
     BarChart2,
     PenLine,
+    Users,
 } from "lucide-react";
 
 const menuItems = [
     { label: "Overview",   href: "/dashboard",  icon: House },
     { label: "Statistics", href: "/statistics",  icon: BarChart2 },
     { label: "Log",        href: "/log",         icon: PenLine },
+    { label: "Family",     href: "/family",      icon: Users },
     { label: "Profile",    href: "/profile",     icon: CircleUserRound },
 ];
 

@@ -20,10 +20,11 @@ export interface NewTransactionRequest {
 
 export interface TransactionRecord {
   amount: number;
-  budgetLeft: number | null;
+  budgetLeftNow: number | null;
   category: string; // display name e.g. "Food", "Debt payments"
   notes: string;
   time: string;    // ISO-8601 with offset e.g. "2026-07-30T12:00:00-04:00"
+  userId: number | null; // who logged it; null for family rows whose logger's account was deleted
 }
 
 export interface PagedTransactionResponse {

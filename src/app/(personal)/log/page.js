@@ -47,13 +47,13 @@ function ResultCard({ result, onReset }) {
       {isSpending && (
         <p className="select-none mt-1 text-sm text-zinc-500 dark:text-rose-300/70">{result.category}</p>
       )}
-      {result.budgetLeft != null && (
+      {result.budgetLeftNow != null && (
         <p className="select-none mt-3 text-sm text-zinc-500 dark:text-rose-300/70">
-          Budget remaining: <span className="font-medium text-black dark:text-rose-100">${result.budgetLeft.toFixed(2)}</span>
+          Budget remaining: <span classNamecurrent="font-medium text-black dark:text-rose-100">${result.budgetLeftNow.toFixed(2)}</span>
         </p>
       )}
       {result.notes && (
-        <p className="select-none mt-1 text-sm text-zinc-400 dark:text-rose-300/40 italic">"{result.notes}"</p>
+        <p className="select-none mt-1 text-sm text-zinc-400 dark:text-rose-300/40 italic">&quot;{result.notes}&quot;</p>
       )}
       <button
         onClick={onReset}
