@@ -1,54 +1,37 @@
-import Image from "next/image";
+import { PiggyMark } from "@/components/icons";
+import { GradientBackdrop } from "@/components/backdrop";
+import styles from "@/components/animations.module.css";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+    <GradientBackdrop className="flex flex-1 items-center justify-center px-4 py-16 font-sans">
+      <div className={`relative flex w-full max-w-sm flex-col items-center text-center ${styles.fadeInUp}`}>
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-500 dark:bg-rose-500/10 dark:text-rose-400">
+          <PiggyMark className="h-9 w-9" />
+        </span>
+
+        <h1 className="mt-6 text-3xl font-semibold tracking-tight text-black dark:text-rose-100">
+          PiggyMemo
+        </h1>
+        <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-rose-300/70">
+          Track your spending, set budgets, and manage money together with your family — all in one place.
+        </p>
+
+        <div className="mt-8 flex w-full flex-col gap-3">
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="/register"
+            className="flex h-11 w-full items-center justify-center rounded-full bg-rose-500 text-sm font-medium text-white transition-all duration-150 hover:scale-[1.02] hover:bg-rose-600 active:scale-95"
           >
-            Register
+            Get started
           </a>
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
             href="/login"
+            className="flex h-11 w-full items-center justify-center rounded-full border border-zinc-200 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:text-rose-200 dark:hover:bg-zinc-900"
           >
             Log in
           </a>
         </div>
-      </main>
-    </div>
+      </div>
+    </GradientBackdrop>
   );
 }
