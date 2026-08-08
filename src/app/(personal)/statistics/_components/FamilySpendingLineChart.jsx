@@ -63,7 +63,7 @@ export default function FamilySpendingLineChart({ memberSpending, members }) {
       <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-rose-300/70">
         Family spending
       </p>
-      <p className="mb-4 text-2xl font-semibold text-black dark:text-rose-100">By member, this month</p>
+      <p className="mb-4 text-2xl font-semibold text-black dark:text-rose-100">By member</p>
       {data.length === 0 ? (
         <div className="flex h-48 items-center justify-center">
           <p className="text-sm text-zinc-400 dark:text-rose-300/40">No spending logged yet</p>

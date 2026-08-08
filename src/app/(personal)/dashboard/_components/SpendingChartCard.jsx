@@ -90,6 +90,7 @@ export default function SpendingChartCard({ chartData }) {
                       fill="#f43f5e"
                       radius={[5, 5, 0, 0]}
                       animationDuration={500}
+                      maxBarSize={40}
                   />
                 </BarChart>
               </ResponsiveContainer>
