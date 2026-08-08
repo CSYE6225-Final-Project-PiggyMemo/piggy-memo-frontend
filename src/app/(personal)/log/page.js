@@ -49,7 +49,7 @@ function ResultCard({ result, onReset }) {
       )}
       {result.budgetLeftNow != null && (
         <p className="select-none mt-3 text-sm text-zinc-500 dark:text-rose-300/70">
-          Budget remaining: <span classNamecurrent="font-medium text-black dark:text-rose-100">${result.budgetLeftNow.toFixed(2)}</span>
+          Budget remaining: <span className="font-medium text-black dark:text-rose-100">${result.budgetLeftNow.toFixed(2)}</span>
         </p>
       )}
       {result.notes && (
